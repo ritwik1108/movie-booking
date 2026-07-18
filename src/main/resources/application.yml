@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: moviebooking
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:moviebooking;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDER=HIGH;DB_CLOSE_DELAY=-1}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970} # 256-bit secret key
+    expiration-ms: 86400000 # 24 hours
+  hold:
+    ttl-minutes: 5
+  payment:
+    fail-percent: 10 # 10% chance of random failure for testing (if not explicitly overridden)
+  notifications:
+    outbox:
+      polling-interval-ms: 5000
+      max-retry-attempts: 3
+    upcoming-shows-window-hours: 24
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.moviebooking: DEBUG
+    org.hibernate.SQL: DEBUG
