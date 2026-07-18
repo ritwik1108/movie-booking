@@ -28,20 +28,20 @@ public class BookingService {
     @Transactional
     public SeatHold holdSeats(Long showId, List<Long> seatIds, User user) {
         Show show = showRepository.findById(showId)
-                .orElseThrow(() -> new NotFoundException("Show not found"));
+                .orElseThrow(() -> new NotFoundException("SHOW_NOT_FOUND", "Show not found"));
 
         // BUG: We fetch the seats without sorting seatIds list in Java. This leads to deadlocks under concurrency.
         List<ShowSeat> showSeats = showSeatRepository.findByShowIdAndSeatIdInWithLockNoOrder(showId, seatIds);
 
         if (showSeats.size() != seatIds.size()) {
-            throw new BadRequestException("Some selected seats do not exist for this show");
+            throw new BadRequestException("INVALID_SEATS", "Some selected seats do not exist for this show");
         }
 
         // Validate and apply lazy-expiry inline for held seats
         OffsetDateTime now = OffsetDateTime.now();
         for (ShowSeat showSeat : showSeats) {
             if (showSeat.getStatus() == ShowSeatStatus.BOOKED) {
-                throw new ConflictException("Seat is already booked");
+                throw new ConflictException("SEAT_ALREADY_BOOKED", "Seat is already booked");
             }
             if (showSeat.getStatus() == ShowSeatStatus.HELD) {
                 SeatHold activeHold = showSeat.getHeldByHold();
@@ -50,7 +50,7 @@ public class BookingService {
                     showSeat.setStatus(ShowSeatStatus.AVAILABLE);
                     showSeat.setHeldByHold(null);
                 } else {
-                    throw new ConflictException("Seat is currently held by another user");
+                    throw new ConflictException("SEAT_ALREADY_HELD", "Seat is currently held by another user");
                 }
             }
         }
