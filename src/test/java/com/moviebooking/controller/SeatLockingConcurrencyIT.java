@@ -100,7 +100,10 @@ public class SeatLockingConcurrencyIT {
         Long theaterId = objectMapper.readTree(theaterRes).get("id").asLong();
 
         // Screen
-        ScreenDto screenReq = ScreenDto.builder().name("Screen 5").build();
+        ScreenDto screenReq = ScreenDto.builder()
+                .theaterId(theaterId)
+                .name("Screen 5")
+                .build();
         String screenRes = mockMvc.perform(post("/api/v1/admin/theaters/" + theaterId + "/screens")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)

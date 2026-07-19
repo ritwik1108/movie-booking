@@ -80,6 +80,7 @@ public class CatalogControllerIT {
 
         // 3. Create a Screen in Theater
         ScreenDto screenReq = ScreenDto.builder()
+                .theaterId(theaterId)
                 .name("Audi 1")
                 .build();
         String screenResponse = mockMvc.perform(post("/api/v1/admin/theaters/" + theaterId + "/screens")
