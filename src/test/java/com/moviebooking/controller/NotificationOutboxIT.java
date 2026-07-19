@@ -59,6 +59,12 @@ public class NotificationOutboxIT {
     @Autowired
     private NotificationOutboxPoller notificationOutboxPoller;
 
+    @Autowired
+    private com.moviebooking.repository.ShowRepository showRepository;
+
+    @Autowired
+    private com.moviebooking.scheduler.ShowReminderScheduler showReminderScheduler;
+
     private String adminToken;
     private String customerToken;
 
@@ -281,5 +287,58 @@ public class NotificationOutboxIT {
         // Since attemptCount hits 3, it should set status to FAILED
         assertEquals(NotificationOutboxStatus.FAILED, attempt3.getStatus());
         assertEquals(3, attempt3.getAttemptCount());
+    }
+
+    @Test
+    public void testShowReminderScheduler() throws Exception {
+        // 1. Hold and confirm a booking
+        HoldRequest holdReq = new HoldRequest();
+        holdReq.setSeatIds(seatIds);
+        String holdRes = mockMvc.perform(post("/api/v1/shows/" + showId + "/holds")
+                        .header("Authorization", "Bearer " + customerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(holdReq)))
+                .andReturn().getResponse().getContentAsString();
+        Long holdId = objectMapper.readTree(holdRes).get("holdId").asLong();
+
+        ConfirmBookingRequest confirmReq = ConfirmBookingRequest.builder()
+                .holdId(holdId)
+                .paymentToken("card_tok_123")
+                .build();
+        String confirmRes = mockMvc.perform(post("/api/v1/bookings/confirm")
+                        .header("Authorization", "Bearer " + customerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(confirmReq)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        Long bookingId = objectMapper.readTree(confirmRes).get("bookingId").asLong();
+
+        // 2. Clear outbox from the confirmation event so we can test reminders clean
+        notificationOutboxRepository.deleteAll();
+
+        // 3. Move show start time to be exactly 1 hour and 30 minutes from now (starts within 2 hours)
+        com.moviebooking.domain.show.Show show = showRepository.findById(showId).orElseThrow();
+        show.setStartTime(OffsetDateTime.now().plusMinutes(90));
+        showRepository.save(show);
+
+        // 4. Trigger show reminder scheduler
+        showReminderScheduler.sendUpcomingShowReminders();
+
+        // 5. Verify SHOW_REMINDER outbox notification is enqueued
+        List<NotificationOutbox> outboxList = notificationOutboxRepository.findAll();
+        assertEquals(1, outboxList.size());
+        NotificationOutbox reminderEvent = outboxList.get(0);
+        assertEquals("SHOW_REMINDER", reminderEvent.getType());
+        assertEquals(NotificationOutboxStatus.PENDING, reminderEvent.getStatus());
+
+        // 6. Trigger again, should not create a duplicate
+        showReminderScheduler.sendUpcomingShowReminders();
+        assertEquals(1, notificationOutboxRepository.findAll().size());
+
+        // 7. Dispatch using outbox poller
+        notificationOutboxPoller.pollAndDispatch();
+        NotificationOutbox dispatchedEvent = notificationOutboxRepository.findById(reminderEvent.getId()).orElseThrow();
+        assertEquals(NotificationOutboxStatus.SENT, dispatchedEvent.getStatus());
+        assertEquals(1, dispatchedEvent.getAttemptCount());
     }
 }
