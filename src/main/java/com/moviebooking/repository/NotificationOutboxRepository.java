@@ -11,4 +11,11 @@ public interface NotificationOutboxRepository extends JpaRepository<Notification
             NotificationOutboxStatus status,
             int maxAttempts
     );
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(n) > 0 FROM NotificationOutbox n WHERE n.type = :type AND n.recipientUser.id = :userId AND n.payloadJson LIKE %:pattern%")
+    boolean existsByNotification(
+            @org.springframework.data.repository.query.Param("type") String type,
+            @org.springframework.data.repository.query.Param("userId") Long userId,
+            @org.springframework.data.repository.query.Param("pattern") String pattern
+    );
 }
