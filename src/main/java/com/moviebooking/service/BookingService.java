@@ -43,6 +43,7 @@ public class BookingService {
     private final PricingService pricingService;
     private final FakePaymentGateway fakePaymentGateway;
     private final DiscountCodeService discountCodeService;
+    private final NotificationOutboxService notificationOutboxService;
 
     @Transactional
     public SeatHold holdSeats(Long showId, List<Long> seatIds, User user) {
@@ -203,6 +204,8 @@ public class BookingService {
                 ss.setStatus(ShowSeatStatus.BOOKED);
                 showSeatRepository.save(ss);
             }
+
+            notificationOutboxService.enqueueNotification("BOOKING_CONFIRMED", user, toBookingDto(booking));
 
             return new BookingConfirmResult(true, booking, null);
         } else {
