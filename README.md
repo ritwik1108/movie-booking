@@ -39,9 +39,13 @@ A high-performance, single-instance, concurrency-safe REST API for booking movie
 - **Java**: JDK 21+
 
 ### Running the Application
-The project includes a portable configuration. If you do not have Maven globally in your path, run the local maven command:
+To run the application locally:
+```bash
+mvn spring-boot:run
+```
+
+*Note: If you do not have Maven installed globally, you can invoke your local portable Maven path:*
 ```powershell
-# Run using the portable Maven downloaded in the scratch folder
 & C:\Users\Ritwik\.gemini\antigravity\scratch\maven\apache-maven-3.9.6\bin\mvn.cmd spring-boot:run
 ```
 
@@ -57,6 +61,11 @@ The system comes pre-seeded with two accounts for testing:
 
 ## Running Tests
 To run unit and integration tests:
+```bash
+mvn clean test
+```
+
+*Note: If you do not have Maven installed globally, run via your local portable Maven:*
 ```powershell
 & C:\Users\Ritwik\.gemini\antigravity\scratch\maven\apache-maven-3.9.6\bin\mvn.cmd clean test
 ```
