@@ -30,8 +30,11 @@ public class BookingService {
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new NotFoundException("SHOW_NOT_FOUND", "Show not found"));
 
-        // BUG: We fetch the seats without sorting seatIds list in Java. This leads to deadlocks under concurrency.
-        List<ShowSeat> showSeats = showSeatRepository.findByShowIdAndSeatIdInWithLockNoOrder(showId, seatIds);
+        // Fix deadlock: Sort seat IDs in ascending order to acquire locks in a consistent sequence
+        java.util.List<Long> sortedSeatIds = new java.util.ArrayList<>(seatIds);
+        java.util.Collections.sort(sortedSeatIds);
+
+        List<ShowSeat> showSeats = showSeatRepository.findByShowIdAndSeatIdInWithLock(showId, sortedSeatIds);
 
         if (showSeats.size() != seatIds.size()) {
             throw new BadRequestException("INVALID_SEATS", "Some selected seats do not exist for this show");

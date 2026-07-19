@@ -19,11 +19,4 @@ public interface ShowSeatRepository extends JpaRepository<ShowSeat, Long> {
             @Param("showId") Long showId,
             @Param("seatIds") List<Long> seatIds
     );
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT ss FROM ShowSeat ss JOIN FETCH ss.seat s WHERE ss.show.id = :showId AND s.id IN :seatIds")
-    List<ShowSeat> findByShowIdAndSeatIdInWithLockNoOrder(
-            @Param("showId") Long showId,
-            @Param("seatIds") List<Long> seatIds
-    );
 }
