@@ -24,6 +24,7 @@ public class CustomerBookingController {
 
     private final BookingService bookingService;
     private final UserRepository userRepository;
+    private final com.moviebooking.service.RefundService refundService;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -91,5 +92,12 @@ public class CustomerBookingController {
     public ResponseEntity<com.moviebooking.dto.booking.BookingDto> getBookingDetails(@PathVariable Long id) {
         User user = getCurrentUser();
         return ResponseEntity.ok(bookingService.getBookingDetails(id, user));
+    }
+
+    @PostMapping("/bookings/{id}/cancel")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<com.moviebooking.dto.booking.CancelBookingResponse> cancelBooking(@PathVariable Long id) {
+        User user = getCurrentUser();
+        return ResponseEntity.ok(refundService.cancelBooking(id, user));
     }
 }
