@@ -36,6 +36,7 @@ public class RefundService {
     private final RefundPolicyRepository refundPolicyRepository;
     private final ShowSeatRepository showSeatRepository;
     private final DiscountCodeRepository discountCodeRepository;
+    private final NotificationOutboxService notificationOutboxService;
 
     public CancelBookingResponse cancelBooking(Long bookingId, User user) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -91,13 +92,17 @@ public class RefundService {
             discountCodeRepository.save(discountCode);
         }
 
-        return CancelBookingResponse.builder()
+        CancelBookingResponse response = CancelBookingResponse.builder()
                 .bookingId(booking.getId())
                 .status(booking.getStatus())
                 .totalPaid(booking.getTotalPaid())
                 .refundAmount(calcResult.amount())
                 .refundPercentage(calcResult.percentage())
                 .build();
+
+        notificationOutboxService.enqueueNotification("BOOKING_CANCELLED", user, response);
+
+        return response;
     }
 
     private RefundCalculationResult calculateRefund(Booking booking, OffsetDateTime cancellationTime) {
