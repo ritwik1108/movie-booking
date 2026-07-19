@@ -13,6 +13,8 @@ public interface ShowSeatRepository extends JpaRepository<ShowSeat, Long> {
 
     List<ShowSeat> findByShowId(Long showId);
 
+    List<ShowSeat> findByHeldByHold(com.moviebooking.domain.seathold.SeatHold heldByHold);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT ss FROM ShowSeat ss JOIN FETCH ss.seat s WHERE ss.show.id = :showId AND s.id IN :seatIds ORDER BY s.id ASC")
     List<ShowSeat> findByShowIdAndSeatIdInWithLock(
