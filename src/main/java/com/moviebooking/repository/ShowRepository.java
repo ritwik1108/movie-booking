@@ -11,7 +11,7 @@ import java.util.List;
 public interface ShowRepository extends JpaRepository<Show, Long> {
 
     @Query("SELECT s FROM Show s JOIN s.screen sc JOIN sc.theater t JOIN t.city c " +
-           "WHERE s.movie.id = :movieId " +
+           "WHERE (:movieId IS NULL OR s.movie.id = :movieId) " +
            "AND (:cityId IS NULL OR c.id = :cityId) " +
            "AND (cast(:startTime as timestamp) IS NULL OR s.startTime >= :startTime) " +
            "AND (cast(:endTime as timestamp) IS NULL OR s.startTime <= :endTime)")
